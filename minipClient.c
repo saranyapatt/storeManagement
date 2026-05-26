@@ -17,6 +17,7 @@
 #define GETSOCKETERRNO() (errno)
 
 unsigned long session = 0;
+int isAdmin = 0;
 char *getMenu(unsigned long);
 SOCKET serverConnect(struct addrinfo *);
 int serverDisconnect(SOCKET);
@@ -26,6 +27,16 @@ int doViewProducts(struct addrinfo *peer_address);
 int doSearchProduct(struct addrinfo *peer_address);
 int doLogin(struct addrinfo *peer_address);
 int doRegister(struct addrinfo *peer_address);
+int doAddToCart(struct addrinfo *peer_address);
+int doViewCart(struct addrinfo *peer_address);
+int doDeleteFromCart(struct addrinfo *peer_address);
+int doOrder(struct addrinfo *peer_address);
+int doViewHistory(struct addrinfo *peer_address);
+int doLogout(struct addrinfo *peer_address);
+int doAddProduct(struct addrinfo *peer_address);
+int doUpdateProduct(struct addrinfo *peer_address);
+int doRemoveProduct(struct addrinfo *peer_address);
+int doViewMembers(struct addrinfo *peer_address);
 void runMenu(struct addrinfo *peer_address);
 
 int main() {
@@ -58,7 +69,6 @@ void runMenu(struct addrinfo *peer_address) {
   getchar();
 
   if (session == 0) {
-    // Anonymous menu
     switch (clientChoice) {
     case 0: doExit(peer_address); return;
     case 1: doViewProducts(peer_address); break;
@@ -67,13 +77,45 @@ void runMenu(struct addrinfo *peer_address) {
     case 4: doRegister(peer_address); break;
     default: printf("Wrong menu. Please select 0-4.\n"); break;
     }
+  } else if (isAdmin) {
+    switch (clientChoice) {
+    case 0: doExit(peer_address); return;
+    case 1: {
+      printf("\n======================\n"
+             "   Manage Products\n"
+             "======================\n"
+             "[4] Add Product\n"
+             "[5] Update Product\n"
+             "[6] Remove Product\n"
+             "[0] Back\n"
+             "Please select: ");
+      int sub = 0;
+      if (!scanf("%d", &sub)) break;
+      getchar();
+      switch (sub) {
+        case 4: doAddProduct(peer_address); break;
+        case 5: doUpdateProduct(peer_address); break;
+        case 6: doRemoveProduct(peer_address); break;
+        case 0: break;
+        default: printf("Wrong menu.\n"); break;
+      }
+      break;
+    }
+    case 2: doViewHistory(peer_address); break;
+    case 3: doViewMembers(peer_address); break;
+    case 7: doLogout(peer_address); break;
+    default: printf("Wrong menu. Please select 0-3 or 7.\n"); break;
+    }
   } else {
-    // Member menu
     switch (clientChoice) {
     case 0: doExit(peer_address); return;
     case 1: doViewProducts(peer_address); break;
     case 2: doSearchProduct(peer_address); break;
-    case 7: session = 0; printf("Logged out.\n"); break;
+    case 3: doAddToCart(peer_address); break;
+    case 4: doViewCart(peer_address); break;
+    case 5: doOrder(peer_address); break;
+    case 6: doViewHistory(peer_address); break;
+    case 7: doLogout(peer_address); break;
     default: printf("Wrong menu. Please select 0-7.\n"); break;
     }
   }
@@ -86,30 +128,39 @@ char *getMenu(unsigned long sessionId) {
     return NULL;
   if (sessionId == 0) {
     strcpy(menu, "\n======================\n"
-                 "   ยินดีต้อนรับสู่ร้านค้า\n"
+                 " Welcome to our Shop\n"
                  "======================\n"
-                 "[1] ดูรายการสินค้าทั้งหมด\n"
-                 "[2] ค้นหาสินค้า\n"
+                 "[1] View Products\n"
+                 "[2] Search Products\n"
                  "[3] Login\n"
-                 "[4] สมัครสมาชิก\n"
-                 "[0] ออก\n"
-                 "กรุณาเลือก [0-4]: ");
-    return menu;
+                 "[4] Register\n"
+                 "[0] Exit\n"
+                 "Please select [0-4]: ");
+  } else if (isAdmin) {
+    strcpy(menu, "\n======================\n"
+                 "     Admin Menu\n"
+                 "======================\n"
+                 "[1] Manage Products\n"
+                 "[2] View All Orders\n"
+                 "[3] View Members\n"
+                 "[7] Logout\n"
+                 "[0] Exit\n"
+                 "Please select: ");
   } else {
     strcpy(menu, "\n======================\n"
-                 "     เมนูผู้ใช้งาน\n"
+                 "    Member Menu\n"
                  "======================\n"
-                 "[1] ดูรายการสินค้า\n"
-                 "[2] เพิ่มสินค้าลงตะกร้า\n"
-                 "[3] ดูตะกร้าสินค้า\n"
-                 "[4] ลบสินค้าออกจากตะกร้า\n"
-                 "[5] สั่งซื้อสินค้า\n"
-                 "[6] ดูประวัติการสั่งซื้อ\n"
-                 "[7] ออกจากระบบ\n"
-                 "[0] ออก\n"
-                 "กรุณาเลือก [0-7]: ");
-    return menu;
+                 "[1] View Products\n"
+                 "[2] Search Products\n"
+                 "[3] Add to Cart\n"
+                 "[4] View Cart\n"
+                 "[5] Checkout\n"
+                 "[6] View Orders\n"
+                 "[7] Logout\n"
+                 "[0] Exit\n"
+                 "Please select [0-7]: ");
   }
+  return menu;
 }
 
 SOCKET serverConnect(struct addrinfo *peer_address) {
@@ -291,9 +342,10 @@ int doLogin(struct addrinfo *peer_address) {
   switch (status) {
   case STATUS_OK:
     p = strchr(p + 1, ',');
-    if (p)
-      session = strtoul(p + 1, NULL, 10);
-    printf("Login successful! Welcome, %s.\n", username);
+    if (p) session = strtoul(p + 1, NULL, 10);
+    p = strchr(p + 1, ',');
+    if (p) isAdmin = atoi(p + 1);
+    printf("Login successful! Welcome, %s.%s\n", username, isAdmin ? " [Admin]" : "");
     break;
   case STATUS_FAIL:
     printf("Login failed. Invalid username or password.\n");
@@ -370,4 +422,392 @@ int doRegister(struct addrinfo *peer_address) {
     break;
   }
   return status == STATUS_OK ? 1 : 0;
+}
+
+int doAddToCart(struct addrinfo *peer_address) {
+  char productId[PRODUCTID_SIZE];
+  int quantity;
+  char command[256];
+  char response[256];
+  memset(response, 0, sizeof(response));
+
+  printf("Enter Product ID: ");
+  fgets(productId, sizeof(productId), stdin);
+  productId[strcspn(productId, "\r\n")] = '\0';
+
+  printf("Enter Quantity: ");
+  scanf("%d", &quantity);
+  getchar();
+
+  snprintf(command, sizeof(command), "%s,%lu,%s,%d",
+           COMMAND_UPDATE_CART, session, productId, quantity);
+
+  SOCKET s = serverConnect(peer_address);
+  if (!ISVALIDSOCKET(s)) return 0;
+  send(s, command, strlen(command), 0);
+  int bytes = recv(s, response, sizeof(response) - 1, 0);
+  if (bytes < 1) { serverDisconnect(s); return 0; }
+  response[bytes] = '\0';
+  serverDisconnect(s);
+
+  char *p = strchr(response, ',');
+  if (!p) { printf("Invalid response.\n"); return 0; }
+  int status = atoi(p + 1);
+
+  switch (status) {
+    case STATUS_OK:   printf("Product added to cart.\n"); break;
+    default:          printf("Failed to add to cart. Error: %d\n", status); break;
+  }
+  return status == STATUS_OK ? 1 : 0;
+}
+
+int doViewCart(struct addrinfo *peer_address) {
+  char command[64];
+  char response[2048];
+  memset(response, 0, sizeof(response));
+
+  snprintf(command, sizeof(command), "%s,%lu", COMMAND_VIEW_CART, session);
+  SOCKET s = serverConnect(peer_address);
+  if (!ISVALIDSOCKET(s)) return 0;
+  send(s, command, strlen(command), 0);
+  int bytes = recv(s, response, sizeof(response) - 1, 0);
+  if (bytes < 1) { serverDisconnect(s); return 0; }
+  response[bytes] = '\0';
+  serverDisconnect(s);
+
+  char *p = strchr(response, ',');
+  if (!p) { printf("Invalid response.\n"); return 0; }
+  int status = atoi(p + 1);
+
+  if (status == STATUS_EMPTY_CART) { printf("Your cart is empty.\n"); return 1; }
+  if (status != STATUS_OK)         { printf("Error: %d\n", status); return 0; }
+
+  p = strchr(p + 1, ',');
+  if (!p) { printf("Invalid response.\n"); return 0; }
+  p++;
+
+  printf("\n%-12s | %-5s\n", "Product ID", "Qty");
+  printf("--------------------\n");
+
+  int count = 0;
+  char *item = strtok(p, "|");
+  while (item != NULL) {
+    char productId[PRODUCTID_SIZE];
+    int quantity;
+    if (sscanf(item, "%9[^-]-%d", productId, &quantity) == 2) {
+      printf("%-12s | %5d\n", productId, quantity);
+      count++;
+    }
+    item = strtok(NULL, "|");
+  }
+  if (count == 0) printf("Your cart is empty.\n");
+  return 1;
+}
+
+int doDeleteFromCart(struct addrinfo *peer_address) {
+  char productId[PRODUCTID_SIZE];
+  char command[128];
+  char response[256];
+  memset(response, 0, sizeof(response));
+
+  printf("Enter Product ID to remove: ");
+  fgets(productId, sizeof(productId), stdin);
+  productId[strcspn(productId, "\r\n")] = '\0';
+
+  snprintf(command, sizeof(command), "%s,%lu,%s",
+           COMMAND_DELETE_FROM_CART, session, productId);
+
+  SOCKET s = serverConnect(peer_address);
+  if (!ISVALIDSOCKET(s)) return 0;
+  send(s, command, strlen(command), 0);
+  int bytes = recv(s, response, sizeof(response) - 1, 0);
+  if (bytes < 1) { serverDisconnect(s); return 0; }
+  response[bytes] = '\0';
+  serverDisconnect(s);
+
+  char *p = strchr(response, ',');
+  if (!p) { printf("Invalid response.\n"); return 0; }
+  int status = atoi(p + 1);
+
+  switch (status) {
+    case STATUS_OK:               printf("Item removed from cart.\n"); break;
+    case STATUS_ITEM_NOT_IN_CART: printf("Item is not in your cart.\n"); break;
+    case STATUS_INVALID_SESSION:  printf("Session invalid. Please log in again.\n"); break;
+    default:                      printf("Failed to remove item. Error: %d\n", status); break;
+  }
+  return status == STATUS_OK ? 1 : 0;
+}
+
+int doOrder(struct addrinfo *peer_address) {
+  char command[64];
+  char response[256];
+  memset(response, 0, sizeof(response));
+
+  snprintf(command, sizeof(command), "%s,%lu", COMMAND_CHECKOUT_CART, session);
+  SOCKET s = serverConnect(peer_address);
+  if (!ISVALIDSOCKET(s)) return 0;
+  send(s, command, strlen(command), 0);
+  int bytes = recv(s, response, sizeof(response) - 1, 0);
+  if (bytes < 1) { serverDisconnect(s); return 0; }
+  response[bytes] = '\0';
+  serverDisconnect(s);
+
+  char *p = strchr(response, ',');
+  if (!p) { printf("Invalid response.\n"); return 0; }
+  int status = atoi(p + 1);
+
+  switch (status) {
+    case STATUS_OK:               printf("Checkout successful! Your order has been placed.\n"); break;
+    case STATUS_EMPTY_CART:       printf("Your cart is empty. Nothing to checkout.\n"); break;
+    case STATUS_INVALID_SESSION:  printf("Not logged in.\n"); break;
+    default:                      printf("Checkout failed. Error: %d\n", status); break;
+  }
+  return status == STATUS_OK ? 1 : 0;
+}
+
+int doViewHistory(struct addrinfo *peer_address) {
+  char command[64];
+  char response[2048];
+  memset(response, 0, sizeof(response));
+
+  snprintf(command, sizeof(command), "%s,%lu", COMMAND_VIEW_ORDER, session);
+  SOCKET s = serverConnect(peer_address);
+  if (!ISVALIDSOCKET(s)) return 0;
+  send(s, command, strlen(command), 0);
+  int bytes = recv(s, response, sizeof(response) - 1, 0);
+  if (bytes < 1) { serverDisconnect(s); return 0; }
+  response[bytes] = '\0';
+  serverDisconnect(s);
+
+  char *p = strchr(response, ',');
+  if (!p) { printf("Invalid response.\n"); return 0; }
+  int status = atoi(p + 1);
+
+  if (status == STATUS_EMPTY_CART)      { printf("No order history found.\n"); return 1; }
+  if (status == STATUS_INVALID_SESSION) { printf("Not logged in.\n"); return 0; }
+  if (status != STATUS_OK)              { printf("Error: %d\n", status); return 0; }
+
+  p = strchr(p + 1, ',');
+  if (!p) { printf("Invalid response.\n"); return 0; }
+  p++;
+
+  int count = 0;
+  char *item = strtok(p, "|");
+  if (isAdmin) {
+    printf("\n%-15s | %-12s | %-5s\n", "Username", "Product ID", "Qty");
+    printf("----------------------------------------\n");
+    while (item != NULL) {
+      char username[USERNAME_SIZE];
+      char productId[PRODUCTID_SIZE];
+      int quantity;
+      if (sscanf(item, "%19[^/]/%9[^-]-%d", username, productId, &quantity) == 3) {
+        printf("%-15s | %-12s | %5d\n", username, productId, quantity);
+        count++;
+      }
+      item = strtok(NULL, "|");
+    }
+  } else {
+    printf("\n%-12s | %-5s\n", "Product ID", "Qty");
+    printf("--------------------\n");
+    while (item != NULL) {
+      char productId[PRODUCTID_SIZE];
+      int quantity;
+      if (sscanf(item, "%9[^-]-%d", productId, &quantity) == 2) {
+        printf("%-12s | %5d\n", productId, quantity);
+        count++;
+      }
+      item = strtok(NULL, "|");
+    }
+  }
+  if (count == 0) printf("No order history found.\n");
+  return 1;
+}
+
+int doLogout(struct addrinfo *peer_address) {
+  char command[64];
+  char response[256];
+  memset(response, 0, sizeof(response));
+
+  snprintf(command, sizeof(command), "%s,%lu", COMMAND_LOGOUT, session);
+  SOCKET s = serverConnect(peer_address);
+  if (!ISVALIDSOCKET(s)) return 0;
+  send(s, command, strlen(command), 0);
+  int bytes = recv(s, response, sizeof(response) - 1, 0);
+  if (bytes > 0) response[bytes] = '\0';
+  serverDisconnect(s);
+
+  session = 0;
+  isAdmin = 0;
+  printf("Logged out successfully.\n");
+  return 1;
+}
+
+int doAddProduct(struct addrinfo *peer_address) {
+  char productId[PRODUCTID_SIZE];
+  char title[PRODUCT_TITLE_SIZE];
+  float price;
+  int qty;
+  char command[512];
+  char response[256];
+  memset(response, 0, sizeof(response));
+
+  printf("Product ID: ");
+  fgets(productId, sizeof(productId), stdin);
+  productId[strcspn(productId, "\r\n")] = '\0';
+
+  printf("Title: ");
+  fgets(title, sizeof(title), stdin);
+  title[strcspn(title, "\r\n")] = '\0';
+
+  printf("Price: ");
+  scanf("%f", &price);
+  printf("Quantity: ");
+  scanf("%d", &qty);
+  getchar();
+
+  snprintf(command, sizeof(command), "%s,%lu,%s,%s,%.2f,%d",
+           COMMAND_ADD_PRODUCT, session, productId, title, price, qty);
+
+  SOCKET s = serverConnect(peer_address);
+  if (!ISVALIDSOCKET(s)) return 0;
+  send(s, command, strlen(command), 0);
+  int bytes = recv(s, response, sizeof(response) - 1, 0);
+  if (bytes < 1) { serverDisconnect(s); return 0; }
+  response[bytes] = '\0';
+  serverDisconnect(s);
+
+  char *p = strchr(response, ',');
+  if (!p) { printf("Invalid response.\n"); return 0; }
+  int status = atoi(p + 1);
+
+  switch (status) {
+    case STATUS_OK:               printf("Product '%s' added successfully.\n", productId); break;
+    case STATUS_DUPLICATE_PRODUCT: printf("Product ID '%s' already exists.\n", productId); break;
+    case STATUS_INVALID_ARGUMENTS: printf("Invalid input.\n"); break;
+    default:                       printf("Failed to add product. Error: %d\n", status); break;
+  }
+  return status == STATUS_OK ? 1 : 0;
+}
+
+int doUpdateProduct(struct addrinfo *peer_address) {
+  char productId[PRODUCTID_SIZE];
+  char title[PRODUCT_TITLE_SIZE];
+  float price;
+  int qty;
+  char command[512];
+  char response[256];
+  memset(response, 0, sizeof(response));
+
+  printf("Product ID to update: ");
+  fgets(productId, sizeof(productId), stdin);
+  productId[strcspn(productId, "\r\n")] = '\0';
+
+  printf("New Title: ");
+  fgets(title, sizeof(title), stdin);
+  title[strcspn(title, "\r\n")] = '\0';
+
+  printf("New Price: ");
+  scanf("%f", &price);
+  printf("New Quantity: ");
+  scanf("%d", &qty);
+  getchar();
+
+  snprintf(command, sizeof(command), "%s,%lu,%s,%s,%.2f,%d",
+           COMMAND_UPDATE_PRODUCT, session, productId, title, price, qty);
+
+  SOCKET s = serverConnect(peer_address);
+  if (!ISVALIDSOCKET(s)) return 0;
+  send(s, command, strlen(command), 0);
+  int bytes = recv(s, response, sizeof(response) - 1, 0);
+  if (bytes < 1) { serverDisconnect(s); return 0; }
+  response[bytes] = '\0';
+  serverDisconnect(s);
+
+  char *p = strchr(response, ',');
+  if (!p) { printf("Invalid response.\n"); return 0; }
+  int status = atoi(p + 1);
+
+  switch (status) {
+    case STATUS_OK:                  printf("Product '%s' updated successfully.\n", productId); break;
+    case STATUS_PRODUCT_NOT_FOUND:   printf("Product '%s' not found.\n", productId); break;
+    case STATUS_INVALID_ARGUMENTS:   printf("Invalid input.\n"); break;
+    default:                         printf("Failed to update product. Error: %d\n", status); break;
+  }
+  return status == STATUS_OK ? 1 : 0;
+}
+
+int doRemoveProduct(struct addrinfo *peer_address) {
+  char productId[PRODUCTID_SIZE];
+  char command[64];
+  char response[256];
+  memset(response, 0, sizeof(response));
+
+  printf("Product ID to remove: ");
+  fgets(productId, sizeof(productId), stdin);
+  productId[strcspn(productId, "\r\n")] = '\0';
+
+  snprintf(command, sizeof(command), "%s,%lu,%s", COMMAND_REMOVE_PRODUCT, session, productId);
+
+  SOCKET s = serverConnect(peer_address);
+  if (!ISVALIDSOCKET(s)) return 0;
+  send(s, command, strlen(command), 0);
+  int bytes = recv(s, response, sizeof(response) - 1, 0);
+  if (bytes < 1) { serverDisconnect(s); return 0; }
+  response[bytes] = '\0';
+  serverDisconnect(s);
+
+  char *p = strchr(response, ',');
+  if (!p) { printf("Invalid response.\n"); return 0; }
+  int status = atoi(p + 1);
+
+  switch (status) {
+    case STATUS_OK:                printf("Product '%s' removed.\n", productId); break;
+    case STATUS_PRODUCT_NOT_FOUND: printf("Product '%s' not found.\n", productId); break;
+    default:                       printf("Failed to remove product. Error: %d\n", status); break;
+  }
+  return status == STATUS_OK ? 1 : 0;
+}
+
+int doViewMembers(struct addrinfo *peer_address) {
+  char command[64];
+  char response[4096];
+  memset(response, 0, sizeof(response));
+
+  snprintf(command, sizeof(command), "%s,%lu", COMMAND_VIEW_MEMBER, session);
+  SOCKET s = serverConnect(peer_address);
+  if (!ISVALIDSOCKET(s)) return 0;
+  send(s, command, strlen(command), 0);
+  int bytes = recv(s, response, sizeof(response) - 1, 0);
+  if (bytes < 1) { serverDisconnect(s); return 0; }
+  response[bytes] = '\0';
+  serverDisconnect(s);
+
+  char *p = strchr(response, ',');
+  if (!p) { printf("Invalid response.\n"); return 0; }
+  int status = atoi(p + 1);
+
+  if (status == STATUS_EMPTY_USER)        { printf("No members registered.\n"); return 1; }
+  if (status == STATUS_PERMISSION_DENIED) { printf("Permission denied.\n"); return 0; }
+  if (status != STATUS_OK)                { printf("Error: %d\n", status); return 0; }
+
+  p = strchr(p + 1, ',');
+  if (!p) { printf("Invalid response.\n"); return 0; }
+  p++;
+
+  printf("\n%-15s | %-10s\n", "Username", "Role");
+  printf("---------------------------\n");
+
+  int count = 0;
+  char *item = strtok(p, "|");
+  while (item != NULL) {
+    char username[USERNAME_SIZE];
+    char role[16];
+    if (sscanf(item, "%19[^-]-%15s", username, role) == 2) {
+      printf("%-15s | %-10s\n", username, role);
+      count++;
+    }
+    item = strtok(NULL, "|");
+  }
+  if (count == 0) printf("No members found.\n");
+  return 1;
 }

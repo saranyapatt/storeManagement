@@ -7,7 +7,6 @@
 #include <stdbool.h>
 #include "common.h"
 
-#define USER_FILENAME "./txt/user.txt"
 
 char* hash_password(const char *password);
 bool verify_password(const char *password, const char *hash);
@@ -20,7 +19,7 @@ int saveUser(UserSessions *head, char *fileName);
 int loadUser(UserSessions *user, char *fileName);
 char* getUser(UserSessions *head,char *output, size_t outputSize);
 
-
+// OK
 // 1. Hash Password
 char* hash_password(const char *password) {
     // Using a static salt for this example
@@ -51,7 +50,8 @@ unsigned long generate_session_id(char *username) {
     return hash;
     }
 
-// 4. Get User By Session (ค้นหาจาก Shared Memory)
+// OK
+// 4. Get User By Session
 User* getUserBySession(UserSessions *sessions, unsigned long sid) {
     if (!sessions || sid == 0) return NULL;
     for (int i = 0; i < MAX_USERS; i++) {
@@ -117,6 +117,7 @@ User* loginUser(UserSessions *sessions, const char *username, const char *passwo
     return NULL;
 }
 
+// OK
 // 7. Logout User
 int logoutUser(UserSessions *sessions, const char *username) {
     for (int i = 0; i < MAX_USERS; i++) {
@@ -128,6 +129,7 @@ int logoutUser(UserSessions *sessions, const char *username) {
     return STATUS_FAIL;
 }
 
+// OK
 // 8. Save User
 int saveUser(UserSessions *sessions, char *fileName) {
     FILE *file = fopen(fileName, "w");
@@ -144,6 +146,7 @@ int saveUser(UserSessions *sessions, char *fileName) {
     return 1;
 }
 
+// OK
 // 9. Load User
 int loadUser(UserSessions *sessions, char *fileName) {
     FILE *file = fopen(fileName, "r");
@@ -171,6 +174,8 @@ int loadUser(UserSessions *sessions, char *fileName) {
     fclose(file);
     return 1;
 }
+
+// OK
 // 10. Get User
 char* getUser(UserSessions *sessions, char *output, size_t outputSize) {
     if (!sessions || !output) return NULL;

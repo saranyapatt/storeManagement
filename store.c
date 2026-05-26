@@ -45,7 +45,7 @@ int addProduct(Store *store, char *productId, char *productTitle, float price, i
             return 1;
         }
     }
-    return 0; // Store full
+    return 0;
 }
 
 // 2. Update Product
@@ -104,6 +104,24 @@ int printStore(Store *store) {
     }
     return 1;
 }
+// 6. Save Store to Text File (CSV Format)
+int saveStore(Store *store, const char *fileName) {
+    if (!store || !fileName) return 0;
+    FILE *file = fopen(fileName, "w");
+    if (!file) return 0;
+    for (int i = 0; i < MAX_STOCK; i++) {
+        if (store->items[i].isUsed) {
+            fprintf(file, "%s,%s,%.2f,%d\n",
+                    store->items[i].productId,
+                    store->items[i].productTitle,
+                    store->items[i].price,
+                    store->items[i].quantity);
+        }
+    }
+    fclose(file);
+    return 1;
+}
+
 // OK
 // 7. Load Store from Text File (CSV Format)
 int loadStore(Store *store, const char *fileName) {
