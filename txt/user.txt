@@ -1,0 +1,5 @@
+admin_user,$2b$12$R9h/cIPz0gi.URQHue91zuCX6v21apV2kGXQB5PNQGNild3lLG50y,1
+customer01,$2b$12$R9h/cIPz0gi.URQHue91zuRJuHzhTJPXkXsH3lhl8lP5RoFG4Tr5W,0
+Bole,$2b$12$R9h/cIPz0gi.URQHue91zutpRFiFgloUTjTIMNqJY6i0oA.zOyyfe,0
+admin1,$2b$12$R9h/cIPz0gi.URQHue91zutpRFiFgloUTjTIMNqJY6i0oA.zOyyfe,1
+admin,$2b$12$R9h/cIPz0gi.URQHue91zuCX6v21apV2kGXQB5PNQGNild3lLG50y,1

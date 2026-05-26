@@ -1,0 +1,4 @@
+alice,$2b$12$R9h/cIPz0gi.URQHue91zuI6xFwRrPPuIYKb2Cz3yBjt2dIKPAcq2,0
+admin,$2b$12$R9h/cIPz0gi.URQHue91zuCX6v21apV2kGXQB5PNQGNild3lLG50y,1
+bob,$2b$12$R9h/cIPz0gi.URQHue91zuiWAsg9Q1I2q6zdpQt1R.9yjC1n1eXSa,0
+grace,$2b$12$R9h/cIPz0gi.URQHue91zui.YRuHBv.mLpEMiqRgURq1iBQpVCX7S,0
