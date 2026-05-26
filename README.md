@@ -25,8 +25,6 @@ miniproject/
 ├── order.c             Cart management and order history
 ├── common.h            Shared structs, constants, and status codes
 ├── test_all.c          Unit + integration tests (97 assertions)
-├── conclude.txt        Project conclusion and known limitations
-├── Makefile
 └── txt/
     ├── user.txt        Persistent user accounts (username,hash,isAdmin)
     ├── store.txt       Initial product catalog
